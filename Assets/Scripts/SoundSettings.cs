@@ -47,14 +47,15 @@ public class SoundSettings : MonoBehaviour
     }
     public void SwitchVolume()
     {
-        if (_isSoundsOn)
+        if (_isSoundsOn == true)
         {
             _audioMixer.audioMixer.SetFloat(_masterVolumeString, -80);
             _isSoundsOn = false;
         }
         else
         {
-            _audioMixer.audioMixer.SetFloat(_masterVolumeString, 0);
+            float dbVolume = Mathf.Log10(_masterVolumeSlider.value) * 20;
+            _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
             _isSoundsOn = true;
         }
 
@@ -63,9 +64,12 @@ public class SoundSettings : MonoBehaviour
 
     public void SetMasterVolume(float volume)
     {
-        float dbVolume = Mathf.Log10(volume) * 20;
-        _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
-        PlayerPrefs.SetFloat(_masterVolumeString, dbVolume);
+        if (_isSoundsOn == true)
+        {
+            float dbVolume = Mathf.Log10(volume) * 20;
+            _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
+            PlayerPrefs.SetFloat(_masterVolumeString, dbVolume);
+        }
     }
 
     public void SetMusicVolume(float volume)
