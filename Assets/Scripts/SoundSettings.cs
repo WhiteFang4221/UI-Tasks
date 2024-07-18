@@ -9,6 +9,12 @@ public class SoundSettings : MonoBehaviour
     [SerializeField] private Slider _musicVolumeSlider;
     [SerializeField] private Slider _buttonsVolumeSlider;
 
+    private float _minVolumeDb = -80;
+    private float _volumeConversionNumber = 20;
+    private int _VolumeOnNumber = 1;
+    private int _VolumeOffNumber = 0;
+    private int _decimalLogarithmNumber = 10;
+
     private string _masterVolumeString = "MasterVolume";
     private string _musicVolumeString = "MusicVolume";
     private string _buttonsVolumeString = "ButtonsVolume";
@@ -18,71 +24,63 @@ public class SoundSettings : MonoBehaviour
 
     private void Start()
     {
-        if (PlayerPrefs.HasKey(_masterVolumeString))
-        {
-            float savedVolume = PlayerPrefs.GetFloat(_masterVolumeString);
-            float normalizedVolume = Mathf.Pow(10, savedVolume / 20f); ;
-            _masterVolumeSlider.value = normalizedVolume;
-        }
-
-        if (PlayerPrefs.HasKey(_musicVolumeString))
-        {
-            float savedVolume = PlayerPrefs.GetFloat(_musicVolumeString);
-            float normalizedVolume = Mathf.Pow(10, savedVolume / 20f); ;
-            _musicVolumeSlider.value = normalizedVolume;
-        }
-
-        if (PlayerPrefs.HasKey(_buttonsVolumeString))
-        {
-            float savedVolume = PlayerPrefs.GetFloat(_buttonsVolumeString);
-            float normalizedVolume = Mathf.Pow(10, savedVolume / 20f); ;
-            _buttonsVolumeSlider.value = normalizedVolume;
-        }
+        LoadSavedVolume(_masterVolumeString, _masterVolumeSlider);
+        LoadSavedVolume(_musicVolumeString, _musicVolumeSlider);
+        LoadSavedVolume(_buttonsVolumeString, _buttonsVolumeSlider);
 
         if (PlayerPrefs.HasKey(_switchVolumeString))
         {
-            _isSoundsOn = PlayerPrefs.GetInt(_switchVolumeString) == 1;
-            _audioMixer.audioMixer.SetFloat(_masterVolumeString, _isSoundsOn ? 0 : -80);
+            _isSoundsOn = PlayerPrefs.GetInt(_switchVolumeString) == _VolumeOnNumber;
+            UpdateMasterVolume();
         }
     }
+
     public void SwitchVolume()
     {
-        if (_isSoundsOn == true)
-        {
-            _audioMixer.audioMixer.SetFloat(_masterVolumeString, -80);
-            _isSoundsOn = false;
-        }
-        else
-        {
-            float dbVolume = Mathf.Log10(_masterVolumeSlider.value) * 20;
-            _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
-            _isSoundsOn = true;
-        }
-
-        PlayerPrefs.SetInt(_switchVolumeString, _isSoundsOn ? 1 : 0);
+        _isSoundsOn = !_isSoundsOn;
+        UpdateMasterVolume();
+        PlayerPrefs.SetInt(_switchVolumeString, _isSoundsOn ? _VolumeOnNumber : _VolumeOffNumber);
     }
 
     public void SetMasterVolume(float volume)
     {
-        if (_isSoundsOn == true)
-        {
-            float dbVolume = Mathf.Log10(volume) * 20;
-            _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
-            PlayerPrefs.SetFloat(_masterVolumeString, dbVolume);
-        }
+        _masterVolumeSlider.value = volume;
+        SetVolume(_masterVolumeString, volume);
     }
 
     public void SetMusicVolume(float volume)
     {
-        float dbVolume = Mathf.Log10(volume) * 20;
-        _audioMixer.audioMixer.SetFloat(_musicVolumeString, dbVolume);
-        PlayerPrefs.SetFloat(_musicVolumeString, dbVolume);
+        _musicVolumeSlider.value = volume;
+        SetVolume(_musicVolumeString, volume);
     }
 
     public void SetButtonsVolume(float volume)
     {
-        float dbVolume = Mathf.Log10(volume) * 20;
-        _audioMixer.audioMixer.SetFloat(_buttonsVolumeString, dbVolume);
-        PlayerPrefs.SetFloat(_buttonsVolumeString, dbVolume);
+        _buttonsVolumeSlider.value = volume;
+        SetVolume(_buttonsVolumeString, volume);
+    }
+
+    private void SetVolume(string volumeKey, float volume)
+    {
+        float dbVolume = Mathf.Log10(volume) * _volumeConversionNumber;
+        _audioMixer.audioMixer.SetFloat(volumeKey, dbVolume);
+        PlayerPrefs.SetFloat(volumeKey, dbVolume);
+    }
+
+    private void LoadSavedVolume(string volumeKey, Slider slider)
+    {
+        if (PlayerPrefs.HasKey(volumeKey))
+        {
+            float savedVolume = PlayerPrefs.GetFloat(volumeKey);
+            float normalizedVolume = Mathf.Pow(_decimalLogarithmNumber, savedVolume / _volumeConversionNumber);
+            slider.value = normalizedVolume;
+            SetVolume(volumeKey, slider.value);
+        }
+    }
+
+    private void UpdateMasterVolume()
+    {
+        float dbVolume = _isSoundsOn ? Mathf.Log10(_masterVolumeSlider.value) * _volumeConversionNumber : _minVolumeDb;
+        _audioMixer.audioMixer.SetFloat(_masterVolumeString, dbVolume);
     }
 }
