@@ -44,8 +44,11 @@ public class SoundSettings : MonoBehaviour
 
     public void SetMasterVolume(float volume)
     {
-        _masterVolumeSlider.value = volume;
-        SetVolume(_masterVolumeString, volume);
+        if (_isSoundsOn == true)
+        {
+            _masterVolumeSlider.value = volume;
+            SetVolume(_masterVolumeString, volume);
+        }
     }
 
     public void SetMusicVolume(float volume)
